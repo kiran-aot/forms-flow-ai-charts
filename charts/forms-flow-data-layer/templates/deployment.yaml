@@ -16,18 +16,18 @@ spec:
   template:
     metadata:
       labels: {{- include "common.labels.standard" ( dict "customLabels" $podLabels "context" $ ) | nindent 8 }}
-        app.kubernetes.io/component: forms-flow-web
+        app.kubernetes.io/component: forms-flow-data-layer
       annotations:
-        checksum/configmap: {{ include (print $.Template.BasePath "/template-configmap.yaml") . | sha256sum }}
-        {{- if (include "forms-flow-web.createConfigmap" .) }}
+        checksum/secrets: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
+        {{- if (include "forms-flow-data-layer.createConfigmap" .) }}
         checksum/configuration: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
         {{- end }}
         {{- if .Values.podAnnotations }}
         {{- include "common.tplvalues.render" (dict "value" .Values.podAnnotations "context" $) | nindent 8 }}
         {{- end }}
     spec:
-      serviceAccountName: {{ include "forms-flow-web.serviceAccountName" . }}
-      {{- include "forms-flow-web.imagePullSecrets" . | nindent 6 }}
+      serviceAccountName: {{ include "forms-flow-data-layer.serviceAccountName" . }}
+      {{- include "forms-flow-data-layer.imagePullSecrets" . | nindent 6 }}
       automountServiceAccountToken: {{ .Values.automountServiceAccountToken }}
       {{- if .Values.hostAliases }}
       hostAliases: {{- include "common.tplvalues.render" (dict "value" .Values.hostAliases "context" $) | nindent 8 }}
@@ -38,7 +38,7 @@ spec:
       affinity:
         podAffinity: {{- include "common.affinities.pods" (dict "type" .Values.podAffinityPreset "component" "jenkins-controller" "customLabels" $podLabels "context" $) | nindent 10 }}
         podAntiAffinity: {{- include "common.affinities.pods" (dict "type" .Values.podAntiAffinityPreset "component" "jenkins-controller" "customLabels" $podLabels "context" $) | nindent 10 }}
-        nodeAffinity: {{- include "common.affinities.nodes" (dict "type" .Values.nodeAffinityPreset.type "key" .Values.nodeAffinityPreset.key "values" .Values.nodeAffinityPreset.values) | nindent 10 }}
+        nodeAffinity: {{- include "common.affinities.nodes" (dict "type" .Values.nodeAffinityPreset.type "key" .Values.nodeAffinityPreset.key "values" .Values.nodeAffinityPreset) | nindent 10 }}
       {{- end }}
       {{- if .Values.nodeSelector }}
       nodeSelector: {{- include "common.tplvalues.render" (dict "value" .Values.nodeSelector "context" $) | nindent 8 }}
@@ -58,9 +58,9 @@ spec:
       {{- if .Values.podSecurityContext.enabled }}
       securityContext: {{- include "common.compatibility.renderSecurityContext" (dict "secContext" .Values.podSecurityContext "context" $) | nindent 8 }}
       {{- end }}
-      containers:
-        - name: forms-flow-web
-          image: {{ include "forms-flow-web.image" . }}
+      containers:       
+        - name: forms-flow-data-layer
+          image: {{ include "forms-flow-data-layer.image" . }}
           imagePullPolicy: {{ .Values.image.pullPolicy | quote }}
           {{- if .Values.containerSecurityContext.enabled }}
           securityContext: {{- include "common.compatibility.renderSecurityContext" (dict "secContext" .Values.containerSecurityContext "context" $) | nindent 12 }}
@@ -79,216 +79,131 @@ spec:
           lifecycle: {{- include "common.tplvalues.render" (dict "value" .Values.lifecycleHooks "context" $) | nindent 12 }}
           {{- end }}
           env:
-          - name: NODE_ENV
+          - name: DEBUG
             valueFrom:
               configMapKeyRef:
-                key: NODE_ENV
-                name: "{{ .Values.formsflow.configmap }}"
-          - name: REACT_APP_ENABLE_CHATBOT
-            valueFrom:
-              configMapKeyRef:
-                key: ENABLE_CHATBOT
-                name: "{{ .Values.formsflow.configmap }}"
-          - name: REACT_APP_CHATBOT_URL
-            valueFrom:
-              configMapKeyRef:
-                key: CHATBOT_URL
-                name: "{{ .Values.formsflow.configmap }}"
-          - name: REACT_APP_ENABLE_LOW_CODE_DESIGNER
-            valueFrom:
-              configMapKeyRef:
-                key: ENABLE_LOW_CODE_DESIGNER
-                name: "{{ .Values.formsflow.configmap }}"
-          - name: REACT_APP_API_SERVER_URL
-            valueFrom:
-              configMapKeyRef:
-                key: FORMIO_URL
-                name: "{{ .Values.formsflow.configmap }}"
-          - name: REACT_APP_API_PROJECT_URL
-            valueFrom:
-              configMapKeyRef:
-                key: FORMIO_URL
-                name: "{{ .Values.formsflow.configmap }}"
-          - name: REACT_APP_BPM_URL
-            valueFrom:
-              configMapKeyRef:
-                key: BPM_API_URL
-                name: "{{ .Values.formsflow.configmap }}"
-          - name: REACT_APP_KEYCLOAK_CLIENT
-            valueFrom:
-              configMapKeyRef:
-                key: KEYCLOAK_CLIENT
+                key: DEBUG
                 name: "{{ .Chart.Name }}"
-          - name: REACT_APP_WEB_BASE_URL
+          - name: FOMRSFLOW_DATA_LAYER_WORKERS
             valueFrom:
               configMapKeyRef:
-                key: WEB_API_URL
-                name: "{{ .Values.formsflow.configmap }}"
-          - name: REACT_APP_APPLICATION_NAME
-            valueFrom:
-              configMapKeyRef:
-                key: APPLICATION_NAME
+                key: FOMRSFLOW_DATA_LAYER_WORKERS
                 name: "{{ .Chart.Name }}"
-          - name: REACT_APP_USER_ACCESS_PERMISSIONS
-            valueFrom:
-              configMapKeyRef:
-                key: USER_ACCESS_PERMISSIONS
-                name: "{{ .Chart.Name }}"
-          - name: REACT_APP_WEBSOCKET_ENCRYPT_KEY
+          - name: FORMSFLOW_API_DB_HOST
             valueFrom:
               secretKeyRef:
-                key: WEBSOCKET_ENCRYPT_KEY
-                name: "{{ .Values.formsflow.secret }}"
-          - name: REACT_APP_KEYCLOAK_URL_REALM
+                key: FORMSFLOW_API_HOSTNAME
+                name: "{{ .Values.formsflow.webapi.secret }}"
+          - name: FORMSFLOW_API_DB_USER
+            valueFrom:
+              secretKeyRef:
+                key: FORMSFLOW_API_DB_USER
+                name: "{{ .Values.formsflow.webapi.secret }}"
+          - name: FORMSFLOW_API_DB_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                key: FORMSFLOW_API_DB_PASSWORD
+                name: "{{ .Values.formsflow.webapi.secret }}"
+          - name: FORMSFLOW_API_DB_NAME
+            valueFrom:
+              secretKeyRef:
+                key: FORMSFLOW_API_DB_NAME
+                name: "{{ .Values.formsflow.webapi.secret }}"
+          - name: FORMSFLOW_API_DB_PORT
             valueFrom:
               configMapKeyRef:
-                key: KEYCLOAK_URL_REALM
+                key: FORMSFLOW_API_PORT
+                name: "{{ .Values.formsflow.webapi.configmap }}"
+          - name: FORMSFLOW_DATALAYER_CORS_ORIGINS
+            valueFrom:
+              configMapKeyRef:
+                key: FORMSFLOW_DATALAYER_CORS_ORIGINS
+                name: "{{ .Chart.Name }}"               
+          - name: JWT_OIDC_AUDIENCE
+            valueFrom:
+              secretKeyRef:
+                key: WEB_CLIENTID
+                name: "{{ .Values.formsflow.secret }}"
+          - name: JWT_OIDC_CACHING_ENABLED
+            valueFrom:
+              configMapKeyRef:
+                key: KEYCLOAK_JWT_OIDC_CACHING_ENABLED
                 name: "{{ .Values.formsflow.configmap }}"
-          - name: REACT_APP_KEYCLOAK_URL
+          - name: JWT_OIDC_ISSUER
+            valueFrom:
+              configMapKeyRef:
+                key: KEYCLOAK_JWT_OIDC_ISSUER
+                name: "{{ .Values.formsflow.configmap }}"
+          - name: JWT_OIDC_JWKS_URI
+            valueFrom:
+              configMapKeyRef:
+                key: KEYCLOAK_JWT_OIDC_JWKS_URI
+                name: "{{ .Values.formsflow.configmap }}"
+          - name: JWT_OIDC_WELL_KNOWN_CONFIG
+            valueFrom:
+              configMapKeyRef:
+                key: KEYCLOAK_JWT_OIDC_CONFIG
+                name: "{{ .Values.formsflow.configmap }}"
+          - name: KEYCLOAK_URL
             valueFrom:
               configMapKeyRef:
                 key: KEYCLOAK_URL
                 name: "{{ .Values.formsflow.configmap }}"
-          - name: REACT_APP_FORMIO_JWT_SECRET
-            valueFrom:
-              secretKeyRef:
-                key: FORMIO_JWT_SECRET
-                name: "{{ .Values.formsflow.secret }}"
-          - name: REACT_APP_MT_ADMIN_BASE_URL
+          - name: WEB_API_BASE_URL
             valueFrom:
               configMapKeyRef:
-                key: FORMSFLOW_ADMIN_BASE
+                key: WEB_API_SERVICE_URL
                 name: "{{ .Values.formsflow.configmap }}"
-          - name: REACT_APP_MULTI_TENANCY_ENABLED
+          - name: KEYCLOAK_URL_REALM
             valueFrom:
               configMapKeyRef:
-                key: MULTI_TENANCY_ENABLED
+                key: KEYCLOAK_URL_REALM
                 name: "{{ .Values.formsflow.configmap }}"
-          - name: REACT_APP_KEYCLOAK_ENABLE_CLIENT_AUTH
+          - name: KEYCLOAK_ENABLE_CLIENT_AUTH
             valueFrom:
               configMapKeyRef:
                 key: KEYCLOAK_ENABLE_CLIENT_AUTH
                 name: "{{ .Values.formsflow.configmap }}"
-          - name: REACT_APP_CUSTOM_SUBMISSION_URL
+          - name: MULTI_TENANCY_ENABLED
             valueFrom:
               configMapKeyRef:
-                key: CUSTOM_SUBMISSION_URL
+                key: MULTI_TENANCY_ENABLED
                 name: "{{ .Values.formsflow.configmap }}"
-          - name: REACT_APP_CUSTOM_SUBMISSION_ENABLED
+          - name: FORMIO_DB_URI
+            valueFrom:
+              secretKeyRef:
+                key: MONGODB_URI
+                name: "{{ .Values.formsflow.secret }}"
+          - name: REDIS_URL
             valueFrom:
               configMapKeyRef:
-                key: CUSTOM_SUBMISSION_ENABLED
+                key: REDIS_URL
                 name: "{{ .Values.formsflow.configmap }}"
-          - name: REACT_APP_DOCUMENT_SERVICE_URL
+          - name: CAMUNDA_DB_PASSWO
             valueFrom:
-              configMapKeyRef:
-                key: FORMSFLOW_DOC_API_URL
-                name: "{{ .Values.formsflow.configmap }}"
-          - name: REACT_APP_DRAFT_ENABLED
-            valueFrom:
-              configMapKeyRef:
-                key: DRAFT_ENABLED
-                name: "{{ .Values.formsflow.configmap }}"
-          - name: REACT_APP_DRAFT_POLLING_RATE
-            valueFrom:
-              configMapKeyRef:
-                key: DRAFT_POLLING_RATE
-                name: "{{ .Values.formsflow.configmap }}"
-          - name: REACT_APP_EXPORT_PDF_ENABLED
-            valueFrom:
-              configMapKeyRef:
-                key: EXPORT_PDF_ENABLED
-                name: "{{ .Values.formsflow.configmap }}"
-          - name: REACT_APP_PUBLIC_WORKFLOW_ENABLED
-            valueFrom:
-              configMapKeyRef:
-                key: PUBLIC_WORKFLOW_ENABLED
-                name: "{{ .Chart.Name }}"
-          - name: REACT_APP_OPENTELEMETRY_SERVICE
-            valueFrom:
-              configMapKeyRef:
-                key: OPENTELEMETRY_SERVICE
-                name: "{{ .Chart.Name }}"
-          - name: REACT_APP_WEB_BASE_CUSTOM_URL
-            valueFrom:
-              configMapKeyRef:
-                key: WEB_BASE_CUSTOM_URL
-                name: "{{ .Chart.Name }}"
-          - name: CUSTOM_THEME_URL
-            valueFrom:
-              configMapKeyRef:
-                key: CUSTOM_THEME_URL
-                name: "{{ .Chart.Name }}"
-          - name: ENABLE_FORMS_MODULE
-            valueFrom:
-              configMapKeyRef:
-                key: ENABLE_FORMS_MODULE
-                name: "{{ .Chart.Name }}"
-          - name: ENABLE_TASKS_MODULE
-            valueFrom:
-              configMapKeyRef:
-                key: ENABLE_TASKS_MODULE
-                name: "{{ .Chart.Name }}"
-          - name: ENABLE_DASHBOARDS_MODULE
-            valueFrom:
-              configMapKeyRef:
-                key: ENABLE_DASHBOARDS_MODULE
-                name: "{{ .Chart.Name }}"
-          - name: ENABLE_PROCESSES_MODULE
-            valueFrom:
-              configMapKeyRef:
-                key: ENABLE_PROCESSES_MODULE
-                name: "{{ .Chart.Name }}"        
-          - name: ENABLE_APPLICATIONS_MODULE
-            valueFrom:
-              configMapKeyRef:
-                key: ENABLE_APPLICATIONS_MODULE
-                name: "{{ .Chart.Name }}"
+              secretKeyRef:
+                key: CAMUNDA_JDBC_PASSWORD
+                name: "{{ .Values.formsflow.bpm.secret }}"
           - name: KEYCLOAK_URL_HTTP_RELATIVE_PATH
             valueFrom:
               configMapKeyRef:
                 key: KEYCLOAK_URL_HTTP_RELATIVE_PATH
                 name: "{{ .Values.formsflow.configmap }}"
-          - name: REACT_APP_LANGUAGE
+          - name: CAMUNDA_DB_USER
+            valueFrom:
+              secretKeyRef:
+                key: CAMUNDA_JDBC_USER
+                name: "{{ .Values.formsflow.bpm.secret }}"
+          - name: CAMUNDA_DB_HOST
             valueFrom:
               configMapKeyRef:
-                key: REACT_APP_LANGUAGE
-                name: "{{ .Chart.Name }}"
-          - name: REACT_APP_CLARITY_KEY
-            valueFrom:
-              configMapKeyRef:
-                key: REACT_APP_CLARITY_KEY
-                name: "{{ .Chart.Name }}"
-          - name: REACT_APP_IS_ENTERPRISE
-            valueFrom:
-              configMapKeyRef:
-                key: REACT_APP_IS_ENTERPRISE
-                name: "{{ .Chart.Name }}"
-          - name: REACT_APP_SHOW_PREMIUM_ICON
-            valueFrom:
-              configMapKeyRef:
-                key: REACT_APP_SHOW_PREMIUM_ICON
-                name: "{{ .Chart.Name }}"
-          - name: REACT_APP_CUSTOM_RESOURCE_BUNDLE_URL
-            valueFrom:
-              configMapKeyRef:
-                key: REACT_APP_CUSTOM_RESOURCE_BUNDLE_URL
-                name: "{{ .Chart.Name }}"
-          - name: REACT_APP_GRAPHQL_API_URL
-            valueFrom:
-              configMapKeyRef:
-                key: REACT_APP_GRAPHQL_API_URL
-                name: "{{ .Chart.Name }}"
-          - name: REACT_APP_USER_NAME_DISPLAY_CLAIM
-            valueFrom:
-              configMapKeyRef:
-                key: USER_NAME_DISPLAY_CLAIM
+                key: DATABASE_SERVICE_NAME
                 name: "{{ .Values.formsflow.configmap }}"
-          - name: REACT_APP_ENABLE_COMPACT_FORM_VIEW
+          - name: CAMUNDA_DB_PORT
             valueFrom:
               configMapKeyRef:
-                key: ENABLE_COMPACT_FORM_VIEW
-                name: "{{ .Values.formsflow.configmap }}"
+                key: CAMUNDA_DATABASE_PORT
+                name: "{{ .Values.formsflow.bpm.configmap }}"
           {{- if .Values.extraEnvVars }}
           {{- include "common.tplvalues.render" (dict "value" .Values.extraEnvVars "context" $) | nindent 8 }}
           {{- end }}
@@ -312,23 +227,28 @@ spec:
           {{- else if ne .Values.resourcesPreset "none" }}
           resources: {{- include "common.resources.preset" (dict "type" .Values.resourcesPreset) | nindent 12 }}
           {{- end }}
-          tty: true
           volumeMounts:
-          - name: tmpfs
-            mountPath: {{.Values.config_path}}
-          - name: forms-flow-web-template-configuration
-            mountPath: /tmp/forms-flow-web-config.template
-            readOnly: true   
             {{- if .Values.extraVolumeMounts }}
             {{- include "common.tplvalues.render" (dict "value" .Values.extraVolumeMounts "context" $) | nindent 12 }}
             {{- end }}
+            {{- if .Values.sidecars }}
+            {{- include "common.tplvalues.render" ( dict "value" .Values.sidecars "context" $) | nindent 8 }}
+            {{- end }}
+        - name: nginx
+          {{- if .Values.containerSecurityContext.enabled }}
+          securityContext: {{- include "common.compatibility.renderSecurityContext" (dict "secContext" .Values.containerSecurityContext "context" $) | nindent 12 }}
+          {{- end }}
+          image: {{ include "forms-flow-data-layer.nginx.image" . }}
+          ports:
+            - containerPort: {{ .Values.ingress.servicePort }}
+          volumeMounts:
+            - name: nginx-config-volume
+              mountPath: /etc/nginx/nginx.conf
+              subPath: nginx.conf
       volumes:
-      - name: forms-flow-web-template-configuration
+      - name: nginx-config-volume
         configMap:
-          name: forms-flow-web-template-configuration
-          defaultMode: 420
-      - name: tmpfs
-        emptyDir: {}
+          name: forms-flow-data-layer-nginx-config      
         {{- if .Values.extraVolumes }}
         {{- include "common.tplvalues.render" (dict "value" .Values.extraVolumes "context" $) | nindent 8 }}
         {{- end }}

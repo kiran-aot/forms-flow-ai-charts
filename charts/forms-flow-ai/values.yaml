@@ -76,7 +76,7 @@ imageCredentials:
 ##
 mongodb:
   image:
-    tag: 8.0.6-debian-12-r1 #4.2.21-debian-10-r8
+    tag: 8.0.10-debian-12-r2 #4.2.21-debian-10-r8
     pullSecrets:
       - forms-flow-auth
   enabled: true
@@ -212,7 +212,7 @@ mongodb:
 
   persistence:
     enabled: true
-    storageClass: ""
+    storageClass: "gp2"
     accessModes:
       - ReadWriteOnce
     size: 8Gi
@@ -263,6 +263,10 @@ gunicorn_threads: "10"
 
 gunicorn_timeout: "120"
 
+UsernameDispalyClaim: "preferred_username"
+
+EnableCompactFormView: false
+
 postgresql-ha:
   enabled: true
   ## @section PostgreSQL with Repmgr parameters
@@ -281,7 +285,7 @@ postgresql-ha:
     image:
       registry: docker.io
       repository: bitnami/postgresql-repmgr
-      tag: 17.4.0-debian-12-r14
+      tag: 17.5.0-debian-12-r10
       ## Specify a imagePullPolicy. Defaults to 'Always' if image tag is 'latest', else set to 'IfNotPresent'
       ## ref: https://kubernetes.io/docs/concepts/containers/images/#pre-pulled-images
       ##
@@ -460,7 +464,7 @@ postgresql-ha:
     image:
       registry: docker.io
       repository: bitnami/pgpool
-      tag: 4.6.0-debian-12-r4
+      tag: 4.6.2-debian-12-r1
       digest: ""
       ## Specify a imagePullPolicy. Defaults to 'Always' if image tag is 'latest', else set to 'IfNotPresent'
       ## ref: https://kubernetes.io/docs/concepts/containers/images/#pre-pulled-images
@@ -581,7 +585,7 @@ postgresql-ha:
     ## If undefined (the default) or set to null, no storageClassName spec is
     ## set, choosing the default provisioner.
     ##
-    storageClass: ""
+    storageClass: "gp2"
     ## @param persistence.mountPath The path the volume will be mounted at, useful when using different PostgreSQL images.
     ##
     mountPath: /bitnami/postgresql
@@ -854,7 +858,7 @@ redisExporter:
     ##   set, choosing the default provisioner.  (gp2 on AWS, standard on
     ##   GKE, AWS & OpenStack)
     ##
-    storageClass: ""
+    storageClass: "gp2"
     ## @param persistence.annotations Persistent Volume Claim annotations
     ##
     annotations: {}

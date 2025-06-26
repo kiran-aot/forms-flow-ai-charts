@@ -131,6 +131,8 @@ forms-flow-idm:
 | `gunicorn_workers`                         | values for gunicorn_worker                                  | `5`                         |
 | `gunicorn_threads`                         | values for gunicorn_thread                                  | `10`                        |
 | `gunicorn_timeout`                         | values for gunicorn_timeout                                 | `120`                       |
+|`UsernameDispalyClaim`                      | value for username display claim                            |`""`                         |
+|`EnableCompactFormView`                     | value for compact form view                                 |`false`                      |
 
 ## Forms Flow Component Parameters
 

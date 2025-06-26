@@ -308,6 +308,31 @@ spec:
             configMapKeyRef:
               key: FORMSFLOW_DOC_API_SERVICE_URL
               name: "{{ .Values.formsflow.configmap }}"
+        - name: BPM_CLIENT_CONN_TIMEOUT
+          valueFrom:
+            configMapKeyRef:
+              key: BPM_CLIENT_CONN_TIMEOUT
+              name: "{{ .Chart.Name }}"
+        - name: DATA_BUFFER_SIZE
+          valueFrom:
+            configMapKeyRef:
+              key: DATA_BUFFER_SIZE
+              name: "{{ .Chart.Name }}"
+        - name: IDENTITY_PROVIDER_MAX_RESULT_SIZE
+          valueFrom:
+            configMapKeyRef:
+              key: IDENTITY_PROVIDER_MAX_RESULT_SIZE
+              name: "{{ .Chart.Name }}"
+        - name: SESSION_COOKIE_SECURE
+          valueFrom:
+            configMapKeyRef:
+              key: SESSION_COOKIE_SECURE
+              name: "{{ .Chart.Name }}"                
+        - name: USER_NAME_DISPLAY_CLAIM
+          valueFrom:
+            configMapKeyRef:
+              key: USER_NAME_DISPLAY_CLAIM
+              name: "{{ .Values.formsflow.configmap }}"                
           {{- if .Values.extraEnvVars }}
           {{- include "common.tplvalues.render" (dict "value" .Values.extraEnvVars "context" $) | nindent 8 }}
           {{- end }}
