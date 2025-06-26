@@ -81,9 +81,9 @@ spec:
           env:
           - name: MONGODB_URI
             valueFrom:
-              configMapKeyRef:
+              secretKeyRef:
                 key: MONGODB_URI
-                name: "{{ .Values.formsflow.configmap }}"
+                name: "{{ .Values.formsflow.secret }}"
           - name: BPM_API_URL
             valueFrom:
               configMapKeyRef:
@@ -280,6 +280,16 @@ spec:
               configMapKeyRef:
                 key: GUNICORN_TIMEOUT
                 name: "{{ .Values.formsflow.configmap }}"
+          - name: USER_NAME_DISPLAY_CLAIM
+            valueFrom:
+              configMapKeyRef:
+                key: USER_NAME_DISPLAY_CLAIM
+                name: "{{ .Values.formsflow.configmap }}"
+          - name: FORMIO_JWT_EXPIRE
+            valueFrom:
+              configMapKeyRef:
+                key: FORMIO_JWT_EXPIRE
+                name: "{{ .Chart.Name }}"
           {{- if .Values.extraEnvVars }}
           {{- include "common.tplvalues.render" (dict "value" .Values.extraEnvVars "context" $) | nindent 8 }}
           {{- end }}
