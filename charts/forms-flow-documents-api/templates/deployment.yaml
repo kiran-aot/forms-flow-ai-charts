@@ -165,6 +165,11 @@ spec:
               configMapKeyRef:
                 key: REDIS_URL
                 name: "{{ .Values.formsflow.configmap }}"
+          - name: ENABLE_COMPACT_FORM_VIEW
+            valueFrom:
+              configMapKeyRef:
+                key: ENABLE_COMPACT_FORM_VIEW
+                name: "{{ .Values.formsflow.configmap }}"
           {{- if .Values.extraEnvVars }}
           {{- include "common.tplvalues.render" (dict "value" .Values.extraEnvVars "context" $) | nindent 8 }}
           {{- end }}

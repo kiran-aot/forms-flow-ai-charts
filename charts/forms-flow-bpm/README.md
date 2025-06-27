@@ -233,7 +233,10 @@ https://<HOSTNAME>/camunda
 | `formsflow.configmap`           | Name of the FormsFlow configuration map.                                                             | `forms-flow-ai`             |
 | `formsflow.secret`               | Name of the FormsFlow secret.                                                                        | `forms-flow-ai`             |
 | `waitFor`                        | Service and port to wait for before starting.                                                       | `${CAMUNDA_DATABASE_SERVICE_NAME}:${CAMUNDA_DATABASE_PORT}` |
-
+|`ClientConnectionTimeOut`         | conection timeout for the component  |`5000`                             |
+|`DataBufferSize`                  | value of data buffersize             |`2`                                |
+|`IdentityProviderMaxResultSize`   | value fof maximum size allocated to identity provider  |`250`            |
+|`SessionCookieSecure`             | value of sesssion cookie secure      |`false`                            |
 ## Vault Parameters
 
 | Name          | Value                                |
